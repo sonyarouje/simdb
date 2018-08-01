@@ -10,6 +10,12 @@ type Customer struct {
 	Address string `json:"address"`
 }
 
+func (c Customer) ID() (value interface{}, jsonField string) {
+	value=c.Name
+	jsonField="name"
+	return
+}
+
 func main(){
 	driver, err:=db.New("mydir")
 	if(err!=nil){
@@ -20,10 +26,10 @@ func main(){
 		Name:"sarouje",
 		Address: "address",
 	}
-	// err=driver.Insert(customer)
-	// if(err!=nil){
-	// 	panic(err)
-	// }
+	err=driver.Insert(customer)
+	if(err!=nil){
+		panic(err)
+	}
 
 	result:=driver.Open(customer).Where("name","=","sarouje").Get()
 	fmt.Printf("%v", result)
