@@ -1,4 +1,4 @@
-package simd
+package db
 
 import (
 	"os"

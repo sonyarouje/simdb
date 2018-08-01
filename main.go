@@ -1,7 +1,7 @@
 package main
 
 import (
-	"simd/simd"
+	"simd/db"
 	"fmt"
 )
 
@@ -11,7 +11,7 @@ type Customer struct {
 }
 
 func main(){
-	driver, err:=simd.New("mydir")
+	driver, err:=db.New("mydir")
 	if(err!=nil){
 		panic(err)
 	}

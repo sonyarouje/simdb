@@ -1,4 +1,4 @@
-package simd
+package db
 
 import (
 	"os"
@@ -27,6 +27,7 @@ type Driver struct {
 	jsonContent     interface{}          // copy of original decoded json data for further processing
 	errors          []error              // contains all the errors when processing
 	originalJSON	interface{}			 //actual json when opening the json file
+	isOpened		bool
 }
 
 //New creates a new database driver
@@ -38,6 +39,18 @@ func New(dir string) (*Driver, error) {
 	err:= createDirIfNotExist(dir)
 
 	return driver, err
+}
+
+//Open will open the json file based on the entity passed.
+//Once the file is open you can apply where conditions or get operation.
+func (d *Driver) Open(entity interface{}) *Driver {
+	db, err:=d.openDB(entity)
+	d.originalJSON=db
+	d.isOpened=true
+	if(err!=nil){
+		d.addError(err)
+	}
+	return d
 }
 
 //Errors will return errors encounters while performing any operation
@@ -52,16 +65,6 @@ func (d *Driver) Insert(entity interface{}) error {
 	return err
 }
 
-//Open will open the json file based on the entity passed.
-//Once the file is open you can apply where conditions.
-func (d *Driver) Open(entity interface{}) *Driver {
-	db, err:=d.openDB(entity)
-	d.originalJSON=db
-	if(err!=nil){
-		d.addError(err)
-	}
-	return d
-}
 
 // Where builds a where clause. e.g: Where("name", "contains", "doe")
 func (d *Driver) Where(key, cond string, val interface{}) *Driver {
@@ -83,6 +86,11 @@ func (d *Driver) Where(key, cond string, val interface{}) *Driver {
 
 //Get the result from the json db. If no where condition then return all the data from json
 func(d *Driver) Get() []interface{}{
+	if(d.isOpened==false){
+		err:=errors.New("should call Open() before doing any query on json file")
+		d.addError(err)
+		return nil
+	}
 	if len(d.queries) > 0 {
 		d.processQuery()
 	}else{
@@ -158,7 +166,6 @@ func (d *Driver) findInArray(aa []interface{}) []interface{} {
 	for _, a := range aa {
 		if m, ok := a.(map[string]interface{}); ok {
 			findResult, err:=d.findInMap(m)
-			fmt.Printf("%v", findResult)
 			if(err==nil){
 				result = append(result, findResult...)
 			}else{
