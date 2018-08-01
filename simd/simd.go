@@ -26,6 +26,7 @@ type Driver struct {
 	queryMap        map[string]QueryFunc // contains query functions
 	jsonContent     interface{}          // copy of original decoded json data for further processing
 	errors          []error              // contains all the errors when processing
+	originalJSON	interface{}			 //actual json when opening the json file
 }
 
 //New creates a new database driver
@@ -55,7 +56,7 @@ func (d *Driver) Insert(entity interface{}) error {
 //Once the file is open you can apply where conditions.
 func (d *Driver) Open(entity interface{}) *Driver {
 	db, err:=d.openDB(entity)
-	d.jsonContent=db
+	d.originalJSON=db
 	if(err!=nil){
 		d.addError(err)
 	}
@@ -80,13 +81,18 @@ func (d *Driver) Where(key, cond string, val interface{}) *Driver {
 	return d
 }
 
-//Get the result from the json db. If no where condition then get all the data from json
-func(d *Driver) Get() interface{}{
+//Get the result from the json db. If no where condition then return all the data from json
+func(d *Driver) Get() []interface{}{
 	if len(d.queries) > 0 {
 		d.processQuery()
+	}else{
+		d.jsonContent=d.originalJSON
 	}
 	d.queryIndex = 0
-	return d.jsonContent
+	if aa, ok := d.jsonContent.([]interface{}); ok {
+		return aa
+	}
+	return nil
 }
 
 // addError adds error to error list
@@ -95,7 +101,7 @@ func (d *Driver) addError(err error) *Driver {
 	return d
 }
 
-func (d *Driver) openDB(entity interface{}) (interface{}, error) {
+func (d *Driver) openDB(entity interface{}) ([]interface{}, error) {
 	entityName, err:=d.getEntityName(entity)
 	if(err!=nil){
 		return nil, err
@@ -107,7 +113,6 @@ func (d *Driver) openDB(entity interface{}) (interface{}, error) {
 	if(err!=nil){
 		return nil, err
 	}
-
 
 	b, readErr:=ioutil.ReadFile(file)
 	if readErr!=nil {
@@ -132,11 +137,11 @@ func (d *Driver) getEntityName (entity interface{}) (string, error) {
 func (d *Driver) readAppend(entity interface{}) (err error) {
 	entityName, err:=d.getEntityName(entity)
 	file:=filepath.Join(d.dir, entityName)
-
 	f, err:=os.OpenFile(file, os.O_RDWR|os.O_CREATE, 0666)
 	defer f.Close()
 
-	b, err:=mergeToExisting(file, entity)
+	result, err:=d.openDB(entity)
+	b, err:=mergeToExisting(result, entity)
 
 	f.Truncate(0)
 	f.Seek(0,0)
@@ -153,6 +158,7 @@ func (d *Driver) findInArray(aa []interface{}) []interface{} {
 	for _, a := range aa {
 		if m, ok := a.(map[string]interface{}); ok {
 			findResult, err:=d.findInMap(m)
+			fmt.Printf("%v", findResult)
 			if(err==nil){
 				result = append(result, findResult...)
 			}else{
@@ -197,7 +203,7 @@ func (d *Driver) findInMap(vm map[string]interface{}) ([]interface{}, error) {
 
 // processQuery makes the result
 func (d *Driver) processQuery() *Driver {
-	if aa, ok := d.jsonContent.([]interface{}); ok {
+	if aa, ok := d.originalJSON.([]interface{}); ok {
 		d.jsonContent = d.findInArray(aa)
 	}
 	return d

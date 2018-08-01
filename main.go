@@ -25,7 +25,7 @@ func main(){
 	// 	panic(err)
 	// }
 
-	result:=driver.Open(customer).Where("name","=","sarouje1").Get()
+	result:=driver.Open(customer).Where("name","=","sarouje").Get()
 	fmt.Printf("%v", result)
 	fmt.Printf("%v", driver.Errors())
 	

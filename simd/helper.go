@@ -2,7 +2,6 @@ package simd
 
 import (
 	"os"
-	"io/ioutil"
 	"encoding/json"
 	"strings"
 	"fmt"
@@ -20,15 +19,8 @@ func createDirIfNotExist(dir string) error {
 }
 
 
-func mergeToExisting(file string, entity interface{}) ([]byte, error) {
-	b, readErr:=ioutil.ReadFile(file)
-	if readErr!=nil {
-		return nil, readErr
-	}
+func mergeToExisting(array []interface{}, entity interface{}) ([]byte, error) {
 
-	array:=make([]interface{}, 0)
-
-	json.Unmarshal(b,&array)
 	array=append(array, entity)
 
 	b, jsonerr:=json.MarshalIndent(array, "", "\t")
@@ -37,6 +29,7 @@ func mergeToExisting(file string, entity interface{}) ([]byte, error) {
 	}
 	return b, nil
 }
+
 
 // getNestedValue fetch nested value from node
 func getNestedValue(input interface{}, node string) (interface{}, error) {
