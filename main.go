@@ -43,6 +43,14 @@ func main(){
 	if(err!=nil){
 		panic(err)
 	}
+
+	custDel:=Customer {
+		Name:"sarouje2",
+	}
+	err=driver.Delete(custDel)
+	if(err!=nil){
+		panic(err)
+	}
 	// var customers []Customer
 
 	// driver.Write(customers)

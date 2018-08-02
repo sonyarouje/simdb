@@ -47,7 +47,8 @@ type Driver struct {
 	entityDealingWith interface{}		 // keeps the entity the driver is dealing with, field will maintain only the last entity inserted or updated or opened
 }
 
-//New creates a new database driver. Pass the directory to store the db files.
+//New creates a new database driver. Accepts the directory name to store the db files.
+//If the passed directory not exist then will create it.
 func New(dir string) (*Driver, error) {
 	driver:= &Driver {
 		dir:dir,
@@ -57,7 +58,7 @@ func New(dir string) (*Driver, error) {
 	return driver, err
 }
 
-//Open will open the json file based on the entity passed.
+//Open will open the json file db based on the entity passed.
 //Once the file is open you can apply where conditions or get operation.
 func (d *Driver) Open(entity interface{}) *Driver {
 	db, err:=d.openDB(entity)
@@ -75,8 +76,8 @@ func (d * Driver) Errors () []error {
 	return d.errors
 }
 
-//Insert the data to the json db. Insert will identify the type of the 
-//entity and insert the entity to the specific json file.
+//Insert the entity to the json db. Insert will identify the type of the 
+//entity and insert the entity to the specific json file basee on the type of the entity.
 //If the file not exist then will create a new file
 func (d *Driver) Insert(entity Entity) (err error) {
 	d.entityDealingWith=entity
@@ -122,12 +123,12 @@ func(d *Driver) Get() []interface{}{
 	return nil
 }
 
-//Update the json data based on the id field value pair
+//Update the json data based on the id field/value pair
 func (d *Driver) Update(entity Entity) (err error) {
 	d.entityDealingWith=entity
 	field, entityID:=entity.ID()
 	records:= d.Open(entity).Get()
-	doUpdate:=false
+	couldUpdate:=false
 	entName,_:=d.getEntityName()
 
 	if(len(records)>0){
@@ -135,19 +136,49 @@ func (d *Driver) Update(entity Entity) (err error) {
 			if record, ok:=item.(map[string]interface{}); ok {
 				if v, ok:=record[field]; ok && v==entityID {
 					records[indx]=entity
-					doUpdate=true
+					couldUpdate=true
 					
-					fmt.Printf("Updating %s with ID %s", entName, entityID)
+					fmt.Printf("Updating %s with ID %s \n", entName, entityID)
 				}
 			}
 		}
 	}
-	if(doUpdate) {
+	if(couldUpdate) {
 		err=d.writeAll(records)
 	} else {
-		return fmt.Errorf("unable to find any record in %s with ID %s", entName, entityID)
+		return fmt.Errorf("Failed to update. Unable to find any %s record with ID %s", entName, entityID)
 	}
 
 	return
 }
 
+//Delete the json data based on the id field/value pair
+func (d *Driver) Delete(entity Entity) (err error) {
+	d.entityDealingWith=entity
+	field, entityID:=entity.ID()
+	records:= d.Open(entity).Get()
+	entName,_:=d.getEntityName()
+
+	couldDelete:=false
+	newRecordArray:=make([]interface{},0,0)
+
+	if(len(records)>0){
+		for indx,item:= range records {
+			if record, ok:=item.(map[string]interface{}); ok {
+				if v, ok:=record[field]; ok && v!=entityID {
+					records[indx]=entity
+					newRecordArray=append(newRecordArray, record)
+				} else {
+					fmt.Printf("Deleting %s with ID %s \n", entName, entityID)
+					couldDelete=true
+				}
+			}
+		}
+	}
+	if(couldDelete) {
+		err=d.writeAll(newRecordArray)
+	} else {
+		return fmt.Errorf("Failed to delete. Unable to find any %s record with ID %s", entName, entityID)
+	}
+	return
+}
