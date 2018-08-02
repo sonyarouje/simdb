@@ -1,25 +1,28 @@
 package db
 
 import (
+	"fmt"
 	"errors"
 )
 
-//Entity any structure wanted to persist to json should implement this interface
+//Entity any structure wanted to persist to json should implement this interface.
+//ID and Field will be used while doing update or delete operation.
 //ID return the id value and field name that stores the id
 /*e.g 
 	type Customer struct {
 		CustID string `json:"cust_id"`
+		Name string `json:"name"`
 		Address string `json:"address"`
 	}
 
-	func (c Customer) ID() (value interface{}, jsonField string) {
+	func (c Customer) ID() (jsonField string, value interface{}) {
 		value=c.CustID
 		jsonField="cust_id"
 		return
 	}
 */
 type Entity interface {
-	ID() (value interface{}, jsonField string)
+	ID() (jsonField string, value interface{})
 }
 
 // empty represents an empty result
@@ -31,15 +34,17 @@ type query struct {
 	value         interface{}
 }
 
+//Driver contains all the state of db.
 type Driver struct {
-	dir string
+	dir string							 //directory name to store the db
 	queries         [][]query            // nested queries
 	queryIndex      int
 	queryMap        map[string]QueryFunc // contains query functions
 	jsonContent     interface{}          // copy of original decoded json data for further processing
 	errors          []error              // contains all the errors when processing
-	originalJSON	interface{}			 //actual json when opening the json file
+	originalJSON	interface{}			 // actual json when opening the json file
 	isOpened		bool
+	entityDealingWith interface{}		 // keeps the entity the driver is dealing with, field will maintain only the last entity inserted or updated or opened
 }
 
 //New creates a new database driver. Pass the directory to store the db files.
@@ -57,6 +62,7 @@ func New(dir string) (*Driver, error) {
 func (d *Driver) Open(entity interface{}) *Driver {
 	db, err:=d.openDB(entity)
 	d.originalJSON=db
+	d.entityDealingWith=entity
 	d.isOpened=true
 	if(err!=nil){
 		d.addError(err)
@@ -73,6 +79,7 @@ func (d * Driver) Errors () []error {
 //entity and insert the entity to the specific json file.
 //If the file not exist then will create a new file
 func (d *Driver) Insert(entity Entity) (err error) {
+	d.entityDealingWith=entity
 	err=d.readAppend(entity)
 	return
 }
@@ -108,8 +115,39 @@ func(d *Driver) Get() []interface{}{
 		d.jsonContent=d.originalJSON
 	}
 	d.queryIndex = 0
+	
 	if aa, ok := d.jsonContent.([]interface{}); ok {
 		return aa
 	}
 	return nil
 }
+
+//Update the json data based on the id field value pair
+func (d *Driver) Update(entity Entity) (err error) {
+	d.entityDealingWith=entity
+	field, entityID:=entity.ID()
+	records:= d.Open(entity).Get()
+	doUpdate:=false
+	entName,_:=d.getEntityName()
+
+	if(len(records)>0){
+		for indx,item:= range records {
+			if record, ok:=item.(map[string]interface{}); ok {
+				if v, ok:=record[field]; ok && v==entityID {
+					records[indx]=entity
+					doUpdate=true
+					
+					fmt.Printf("Updating %s with ID %s", entName, entityID)
+				}
+			}
+		}
+	}
+	if(doUpdate) {
+		err=d.writeAll(records)
+	} else {
+		return fmt.Errorf("unable to find any record in %s with ID %s", entName, entityID)
+	}
+
+	return
+}
+

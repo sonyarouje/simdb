@@ -2,7 +2,6 @@ package db
 
 import (
 	"os"
-	"encoding/json"
 	"strings"
 	"fmt"
 	"strconv"
@@ -19,15 +18,9 @@ func createDirIfNotExist(dir string) error {
 }
 
 
-func mergeToExisting(array []interface{}, entity interface{}) ([]byte, error) {
-
+func mergeToExisting(array []interface{}, entity interface{}) ([]interface{}, error) {
 	array=append(array, entity)
-
-	b, jsonerr:=json.MarshalIndent(array, "", "\t")
-	if jsonerr!=nil {
-		return nil, jsonerr
-	}
-	return b, nil
+	return array, nil
 }
 
 

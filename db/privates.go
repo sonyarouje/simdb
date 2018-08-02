@@ -19,7 +19,8 @@ func (d *Driver) addError(err error) *Driver {
 }
 
 func (d *Driver) openDB(entity interface{}) ([]interface{}, error) {
-	entityName, err:=d.getEntityName(entity)
+	entityName, err:=d.getEntityName()
+	
 	if(err!=nil){
 		return nil, err
 	}
@@ -41,8 +42,8 @@ func (d *Driver) openDB(entity interface{}) ([]interface{}, error) {
 	return array, nil
 }
 
-func (d *Driver) getEntityName (entity interface{}) (string, error) {
-	typeName:=strings.Split(reflect.TypeOf(entity).String(), ".")
+func (d *Driver) getEntityName () (string, error) {
+	typeName:=strings.Split(reflect.TypeOf(d.entityDealingWith).String(), ".")
 	if len(typeName)<=0 {
 		return "", fmt.Errorf("unable infer the type of the entity passed")
 	}
@@ -51,21 +52,29 @@ func (d *Driver) getEntityName (entity interface{}) (string, error) {
 }
 
 func (d *Driver) readAppend(entity interface{}) (err error) {
-	entityName, err:=d.getEntityName(entity)
+	result, err:=d.openDB(entity)
+	mergedArray, err:=mergeToExisting(result, entity)
+	err=d.writeAll(mergedArray)
+	return
+}
+
+func(d *Driver) writeAll(entities []interface{}) (err error) {
+	entityName, err:=d.getEntityName()
 	file:=filepath.Join(d.dir, entityName)
 	f, err:=os.OpenFile(file, os.O_RDWR|os.O_CREATE, 0666)
 	defer f.Close()
 
-	result, err:=d.openDB(entity)
-	b, err:=mergeToExisting(result, entity)
-
+	b, err:=json.MarshalIndent(entities, "", "\t")
+	if err!=nil {
+		return
+	}
 	f.Truncate(0)
 	f.Seek(0,0)
 	f.Write(b)
 	f.Sync()
-
 	return
 }
+
 
 // findInArray traverses through a list and returns the value list.
 // This helps to process Where/OrWhere queries
