@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"errors"
+	"github.com/mitchellh/mapstructure"
 )
 
 //Entity any structure wanted to persist to json should implement this interface.
@@ -10,14 +11,14 @@ import (
 //ID return the id value and field name that stores the id
 /*e.g 
 	type Customer struct {
-		CustID string `json:"cust_id"`
+		CustID string `json:"custid"`
 		Name string `json:"name"`
 		Address string `json:"address"`
 	}
 
 	func (c Customer) ID() (jsonField string, value interface{}) {
 		value=c.CustID
-		jsonField="cust_id"
+		jsonField="custid"
 		return
 	}
 */
@@ -61,9 +62,10 @@ func New(dir string) (*Driver, error) {
 //Open will open the json file db based on the entity passed.
 //Once the file is open you can apply where conditions or get operation.
 func (d *Driver) Open(entity interface{}) *Driver {
+	d.entityDealingWith=entity
+
 	db, err:=d.openDB(entity)
 	d.originalJSON=db
-	d.entityDealingWith=entity
 	d.isOpened=true
 	if(err!=nil){
 		d.addError(err)
@@ -103,7 +105,7 @@ func (d *Driver) Where(key, cond string, val interface{}) *Driver {
 	return d
 }
 
-//Get the result from the json db. If no where condition then return all the data from json
+//Get the result from the json db as an array. If no where condition then return all the data from json
 func(d *Driver) Get() []interface{}{
 	if(d.isOpened==false){
 		err:=errors.New("should call Open() before doing any query on json file")
@@ -122,6 +124,38 @@ func(d *Driver) Get() []interface{}{
 	}
 	return nil
 }
+
+//First return the first record matching the condtion.
+func(d *Driver) First() interface{} {
+	records:=d.Get()
+	
+	if len(records)>0 {
+		return records[0]
+	}
+
+	return nil
+}
+
+//ToEntity will converts the map to the passed structure.
+//result parameter takes the result returned by Get() or First()
+//out will take pointer to structure.
+//e.g. 
+// struct custOut Customer
+// driver.ToEntity(result, &custOut)
+// this function will fill the custOut with the values from the map
+func (d *Driver) ToEntity(result interface{}, out Entity) interface {}{
+	mapstructure.Decode(result, out)
+	return out
+}
+
+// func (d *Driver) ToEntityArray(result []interface{}, out Entity) []interface {} {
+// 	outArray:=make([]interface{}, 0)
+
+// 	for _, item:=range result {
+// 		outArray=append(outArray,d.ToEntity(item, out))
+// 	}
+// 	return outArray
+// }
 
 //Update the json data based on the id field/value pair
 func (d *Driver) Update(entity Entity) (err error) {
