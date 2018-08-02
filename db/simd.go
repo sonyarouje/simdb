@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"errors"
 	"github.com/mitchellh/mapstructure"
+	// "reflect"
 )
 
 //Entity any structure wanted to persist to json should implement this interface.
@@ -143,16 +144,34 @@ func(d *Driver) First() interface{} {
 // struct custOut Customer
 // driver.ToEntity(result, &custOut)
 // this function will fill the custOut with the values from the map
-func (d *Driver) ToEntity(result interface{}, out Entity) interface {}{
-	mapstructure.Decode(result, out)
+func (d *Driver) ToEntity(result interface{}, out interface{}) interface {}{
+
+	err:=mapstructure.Decode(result, out)
+	if(err!=nil) {
+		panic(err)
+	}
+	// fmt.Printf("%#v \n", *tmp)
 	return out
 }
 
-// func (d *Driver) ToEntityArray(result []interface{}, out Entity) []interface {} {
+// func (d *Driver) ToEntityArray(result []interface{}, out interface{}) []interface{} {
 // 	outArray:=make([]interface{}, 0)
-
 // 	for _, item:=range result {
-// 		outArray=append(outArray,d.ToEntity(item, out))
+// 		// structType:=reflect.TypeOf(out)
+// 		// structValue:=reflect.Zero(structType)
+// 		// structInterface:=structValue.Interface()
+// 		// newStruct:=structInterface
+// 		fmt.Printf("%#v", item)
+// 		fmt.Println("")
+// 		tmp:=&out
+// 		err:=mapstructure.Decode(item, tmp)
+// 		if(err!=nil){
+// 			panic(err)
+// 		}
+
+// 		fmt.Printf("%#v", out)
+// 		fmt.Println("")
+// 		outArray=append(outArray,out)
 // 	}
 // 	return outArray
 // }

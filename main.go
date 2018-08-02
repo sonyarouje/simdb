@@ -44,16 +44,24 @@ func main(){
 	// }
 
 	var custOut Customer;
+	// tmpCust:=&Customer{}
+	result:=driver.Open(customer).Where("custid","=","CU1").First()
+	tmp:=driver.ToEntity(result, &custOut)
+	fmt.Printf("%#v", tmp)
+	fmt.Printf("%s %s", custOut.Name, custOut.Contact.Email)
 
-	// result:=driver.Open(customer).Where("custid","=","CU1").First()
-	// tmp:=driver.ToEntity(result, &custOut)
-	// fmt.Printf("%#v", tmp)
+	fmt.Println("")
+	// result2:=driver.Open(customer).Where("name","=","sarouje").Get()
+	// driver.ToEntityArray(result2, custOut)
+	// fmt.Printf("%#v", entityArray)
 
-	// fmt.Printf("%s %s", custOut.Name, custOut.Contact.Email)
-
-	result2:=driver.Open(customer).Where("name","=","sarouje").Get()
-	entityArray:=driver.ToEntityArray(result2, &custOut)
-	fmt.Printf("%#v", entityArray)
+	// var entityArray []Customer
+	// var custOut1 Customer;
+	// for _, item:= range result2 {
+	// 	driver.ToEntity(item, &custOut1)
+	// 	entityArray=append(entityArray, custOut1)
+	// }
+	// fmt.Printf("%#v", entityArray)
 
 	// custUpd:=Customer {
 	// 	Name:"sarouje1",
