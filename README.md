@@ -36,7 +36,7 @@ func (c Customer) ID() (jsonField string, value interface{}) {
 }
 
 func main() {
-    driver, err:=db.New("mydir")
+    driver, err:=db.New("data")
     if(err!=nil){
       panic(err)
     }
