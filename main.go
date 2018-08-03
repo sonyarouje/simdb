@@ -45,15 +45,14 @@ func main(){
 
 	var custOut Customer;
 	// tmpCust:=&Customer{}
-	result:=driver.Open(customer).Where("custid","=","CU1").First()
-	tmp:=driver.ToEntity(result, &custOut)
-	fmt.Printf("%#v", tmp)
+	err=driver.Open(Customer{}).Where("custid","=","CU1").First().AsEntity(&custOut)
 	fmt.Printf("%s %s", custOut.Name, custOut.Contact.Email)
 
 	fmt.Println("")
-	// result2:=driver.Open(customer).Where("name","=","sarouje").Get()
-	// driver.ToEntityArray(result2, custOut)
-	// fmt.Printf("%#v", entityArray)
+	var custArray []Customer
+	err=driver.Open(customer).Where("name","=","sarouje").Get().AsEntity(&custArray)
+	// driver.ToEntityArray(result2, &custArray)
+	fmt.Printf("%#v", custArray)
 
 	// var entityArray []Customer
 	// var custOut1 Customer;

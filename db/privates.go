@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"fmt"
-
+	"errors"
 )
 
 
@@ -42,8 +42,15 @@ func (d *Driver) openDB(entity interface{}) ([]interface{}, error) {
 	return array, nil
 }
 
+func(d *Driver) isDBOpened() bool {
+	if(d.isOpened==false){
+		err:=errors.New("should call Open() before doing any query on json file")
+		d.addError(err)
+	}
+	return d.isOpened
+}
+
 func (d *Driver) getEntityName () (string, error) {
-	// fmt.Println(d.entityDealingWith)
 	typeName:=strings.Split(reflect.TypeOf(d.entityDealingWith).String(), ".")
 	if len(typeName)<=0 {
 		return "", fmt.Errorf("unable infer the type of the entity passed")

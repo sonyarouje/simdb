@@ -2,27 +2,31 @@ package db
 
 import (
 	"fmt"
-	"errors"
-	"github.com/mitchellh/mapstructure"
-	// "reflect"
+	"encoding/json"
 )
 
-//Entity any structure wanted to persist to json should implement this interface.
-//ID and Field will be used while doing update or delete operation.
-//ID return the id value and field name that stores the id
-/*e.g 
-	type Customer struct {
-		CustID string `json:"custid"`
-		Name string `json:"name"`
-		Address string `json:"address"`
-	}
-
-	func (c Customer) ID() (jsonField string, value interface{}) {
-		value=c.CustID
-		jsonField="custid"
-		return
-	}
-*/
+//Entity any structure wanted to persist to json db should implement this interface.
+//ID and Field will be used while doing update and delete operation.
+//ID() return the id value and field name that stores the id
+//
+//Sample Struct
+//	type Customer struct {
+//		CustID string `json:"custid"`
+//		Name string `json:"name"`
+//		Address string `json:"address"`
+//		Contact Contact
+//	}
+//
+//	type Contact struct {
+//		Phone string `json:"phone"`
+//		Email string `json:"email"`
+//	}
+//
+//	func (c Customer) ID() (jsonField string, value interface{}) {
+//		value=c.CustID
+//		jsonField="custid"
+//		return
+//	}
 type Entity interface {
 	ID() (jsonField string, value interface{})
 }
@@ -36,7 +40,7 @@ type query struct {
 	value         interface{}
 }
 
-//Driver contains all the state of db.
+//Driver contains all the state of the db.
 type Driver struct {
 	dir string							 //directory name to store the db
 	queries         [][]query            // nested queries
@@ -51,6 +55,7 @@ type Driver struct {
 
 //New creates a new database driver. Accepts the directory name to store the db files.
 //If the passed directory not exist then will create it.
+// driver, err:=db.New("customer")
 func New(dir string) (*Driver, error) {
 	driver:= &Driver {
 		dir:dir,
@@ -62,11 +67,14 @@ func New(dir string) (*Driver, error) {
 
 //Open will open the json file db based on the entity passed.
 //Once the file is open you can apply where conditions or get operation.
+// driver.Open(Customer{})
+//Open returns a pointer to Driver, so you can chain methods like Where(), Get(), etc
 func (d *Driver) Open(entity interface{}) *Driver {
 	d.entityDealingWith=entity
 
 	db, err:=d.openDB(entity)
 	d.originalJSON=db
+	d.jsonContent=d.originalJSON
 	d.isOpened=true
 	if(err!=nil){
 		d.addError(err)
@@ -80,15 +88,27 @@ func (d * Driver) Errors () []error {
 }
 
 //Insert the entity to the json db. Insert will identify the type of the 
-//entity and insert the entity to the specific json file basee on the type of the entity.
-//If the file not exist then will create a new file
+//entity and insert the entity to the specific json file based on the type of the entity.
+//If the db file not exist then will create a new db file
+// 	customer:=Customer {
+//		CustID:"CUST1",
+//		Name:"sarouje",
+//		Address: "address",
+//		Contact: Contact {
+//			Phone:"45533355",
+//			Email:"someone@gmail.com",
+//		},
+//	}
+// err:=driver.Insert(customer)
 func (d *Driver) Insert(entity Entity) (err error) {
 	d.entityDealingWith=entity
 	err=d.readAppend(entity)
 	return
 }
 
-// Where builds a where clause. e.g: Where("name", "=", "doe")
+//Where builds a where clause to filter the records.
+//e.g: 
+// driver.Open(Customer{}).Where("custid","=","CUST1")
 func (d *Driver) Where(key, cond string, val interface{}) *Driver {
 	q := query{
 		key:      key,
@@ -107,11 +127,13 @@ func (d *Driver) Where(key, cond string, val interface{}) *Driver {
 }
 
 //Get the result from the json db as an array. If no where condition then return all the data from json
-func(d *Driver) Get() []interface{}{
-	if(d.isOpened==false){
-		err:=errors.New("should call Open() before doing any query on json file")
-		d.addError(err)
-		return nil
+//return based on a where condition
+// driver.Open(Customer{}).Where("name","=","sarouje").Get()
+//return all records
+// driver.Open(Customer{}).Get()
+func(d *Driver) Get() *Driver{
+	if(!d.isDBOpened()){
+		return d
 	}
 	if len(d.queries) > 0 {
 		d.processQuery()
@@ -120,67 +142,67 @@ func(d *Driver) Get() []interface{}{
 	}
 	d.queryIndex = 0
 	
+	return d
+}
+
+//First return the first record matching the condtion.
+// driver.Open(Customer{}).Where("custid","=","CUST1").First()
+func(d *Driver) First() *Driver {
+	if(!d.isDBOpened()){
+		return d
+	}	
+	records:=d.Get().RawArray()
+	if len(records)>0 {
+		d.jsonContent = records[0]
+	}
+	return d
+}
+
+//Raw will return the data in map type
+func (d *Driver) Raw() interface{} {
+	return d.jsonContent
+}
+
+//RawArray will return the data in map array type
+func (d *Driver) RawArray() []interface{} {
 	if aa, ok := d.jsonContent.([]interface{}); ok {
 		return aa
 	}
 	return nil
 }
 
-//First return the first record matching the condtion.
-func(d *Driver) First() interface{} {
-	records:=d.Get()
-	
-	if len(records)>0 {
-		return records[0]
-	}
-
-	return nil
+//AsEntity will converts the map to the passed structure pointer.
+//should call this function after calling Get() or First(). This function will convert
+//the result of Get or First operation to the passed structure type
+//output should be a pointer to structure or stucture array. Function returns error in case
+//of any errors in conversion.
+//
+//First() 
+// var custOut Customer
+// err:=driver.Open(Customer{}).First().AsEntity(&custOut)
+//this function will fill the custOut with the values from the map
+//
+//Get()
+// var customers []Customer
+// err:=driver.Open(Customer{}).Get().AsEntity(&customers)
+func (d *Driver) AsEntity(output interface{}) (err error) {
+	if(!d.isDBOpened()){
+		return fmt.Errorf("should call Open() before calling AsEntity()")
+	}	
+	outByte, err:= json.Marshal(d.jsonContent)
+	err=json.Unmarshal(outByte, output)
+	return
 }
-
-//ToEntity will converts the map to the passed structure.
-//result parameter takes the result returned by Get() or First()
-//out will take pointer to structure.
-//e.g. 
-// struct custOut Customer
-// driver.ToEntity(result, &custOut)
-// this function will fill the custOut with the values from the map
-func (d *Driver) ToEntity(result interface{}, out interface{}) interface {}{
-
-	err:=mapstructure.Decode(result, out)
-	if(err!=nil) {
-		panic(err)
-	}
-	// fmt.Printf("%#v \n", *tmp)
-	return out
-}
-
-// func (d *Driver) ToEntityArray(result []interface{}, out interface{}) []interface{} {
-// 	outArray:=make([]interface{}, 0)
-// 	for _, item:=range result {
-// 		// structType:=reflect.TypeOf(out)
-// 		// structValue:=reflect.Zero(structType)
-// 		// structInterface:=structValue.Interface()
-// 		// newStruct:=structInterface
-// 		fmt.Printf("%#v", item)
-// 		fmt.Println("")
-// 		tmp:=&out
-// 		err:=mapstructure.Decode(item, tmp)
-// 		if(err!=nil){
-// 			panic(err)
-// 		}
-
-// 		fmt.Printf("%#v", out)
-// 		fmt.Println("")
-// 		outArray=append(outArray,out)
-// 	}
-// 	return outArray
-// }
 
 //Update the json data based on the id field/value pair
+// customerToUpdate:=driver.Open(Customer{}).Where("custid","=","CUST1").First()
+// customerToUpdate.Name="Sony Arouje"
+// err:=driver.Update(customerToUpdate)
+//Should not change the ID field when updating the record.
 func (d *Driver) Update(entity Entity) (err error) {
 	d.entityDealingWith=entity
 	field, entityID:=entity.ID()
-	records:= d.Open(entity).Get()
+	records:= d.Open(entity).Get().RawArray()
 	couldUpdate:=false
 	entName,_:=d.getEntityName()
 
@@ -190,7 +212,6 @@ func (d *Driver) Update(entity Entity) (err error) {
 				if v, ok:=record[field]; ok && v==entityID {
 					records[indx]=entity
 					couldUpdate=true
-					
 					fmt.Printf("Updating %s with ID %s \n", entName, entityID)
 				}
 			}
@@ -205,11 +226,15 @@ func (d *Driver) Update(entity Entity) (err error) {
 	return
 }
 
-//Delete the json data based on the id field/value pair
+//Delete the record from the json db based on the id field/value pair
+// custToDelete:=Customer {
+// 	CustID:"CUST1",
+// }
+// err:=driver.Delete(custToDelete)
 func (d *Driver) Delete(entity Entity) (err error) {
 	d.entityDealingWith=entity
 	field, entityID:=entity.ID()
-	records:= d.Open(entity).Get()
+	records:= d.Open(entity).Get().RawArray()
 	entName,_:=d.getEntityName()
 
 	couldDelete:=false
