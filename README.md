@@ -1,7 +1,7 @@
 # simd
 A simple json db in GO
 
-I sometimes write programs for RaspberryPi using nodejs and use a json file as a data storage. There are so many libraries in nodejs to deal with json file as a data storage. I could'nt find a similar library in GO. So decided to write one.
+I sometimes write programs for RaspberryPi using nodejs and use a json file as a data storage. There are so many libraries in nodejs to deal with json file as a data storage. I could'nt find a similar library in GO to use in GO based RPi projects. So decided to write one.
 
 Keep in mind this library can be used in less data intensive applications.
 
