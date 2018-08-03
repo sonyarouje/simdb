@@ -68,8 +68,8 @@ func New(dir string) (*Driver, error) {
 // driver.Open(Customer{})
 //Open returns a pointer to Driver, so you can chain methods like Where(), Get(), etc
 func (d *Driver) Open(entity Entity) *Driver {
+	d.queries=nil
 	d.entityDealingWith=entity
-
 	db, err:=d.openDB(entity)
 	d.originalJSON=db
 	d.jsonContent=d.originalJSON
@@ -203,6 +203,7 @@ func (d *Driver) AsEntity(output interface{}) (err error) {
 // err:=driver.Update(customerToUpdate)
 //Should not change the ID field when updating the record.
 func (d *Driver) Update(entity Entity) (err error) {
+	d.queries=nil
 	d.entityDealingWith=entity
 	field, entityID:=entity.ID()
 	records:= d.Open(entity).Get().RawArray()
@@ -236,6 +237,7 @@ func (d *Driver) Update(entity Entity) (err error) {
 // }
 // err:=driver.Delete(custToDelete)
 func (d *Driver) Delete(entity Entity) (err error) {
+	d.queries=nil
 	d.entityDealingWith=entity
 	field, entityID:=entity.ID()
 	records:= d.Open(entity).Get().RawArray()

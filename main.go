@@ -3,7 +3,6 @@ package main
 import (
 	"simd/db"
 	"fmt"
-	"time"
 )
 
 type Customer struct {
@@ -75,10 +74,9 @@ func main(){
 	if(err!=nil){
 		panic(err)
 	}
-	// driver.Open(Customer{}).Where("custid","=","CUST1").First().AsEntity(&customerFirst)
-	// fmt.Printf("%#v \n", customerFirst)
+	driver.Open(Customer{}).Where("custid","=","CUST1").First().AsEntity(&customerFirst)
+	fmt.Printf("%#v \n", customerFirst)
 
-	time.Sleep(2 * time.Second)
 	// Delete
 	toDel:=Customer{
 		CustID:"CUST1",
