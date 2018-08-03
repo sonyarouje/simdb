@@ -1,3 +1,4 @@
+//Package db A simple library to persist structs in json file and perform queries and CRUD operations
 package db
 
 import (
@@ -112,8 +113,8 @@ func (d *Driver) Insert(entity Entity) (err error) {
 }
 
 //Where builds a where clause to filter the records.
-//e.g: 
-// driver.Open(Customer{}).Where("custid","=","CUST1")
+//
+//   driver.Open(Customer{}).Where("custid","=","CUST1")
 func (d *Driver) Where(key, cond string, val interface{}) *Driver {
 	q := query{
 		key:      key,
@@ -131,10 +132,11 @@ func (d *Driver) Where(key, cond string, val interface{}) *Driver {
 	return d
 }
 
-//Get the result from the json db as an array. If no where condition then return all the data from json
-//return based on a where condition
+//Get the result from the json db as an array. If no where condition then return all the data from json db
+//
+//Get based on a where condition
 //   driver.Open(Customer{}).Where("name","=","sarouje").Get()
-//return all records
+//Get all records
 //   driver.Open(Customer{}).Get()
 func(d *Driver) Get() *Driver{
 	if(!d.isDBOpened()){
