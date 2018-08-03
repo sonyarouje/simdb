@@ -3,7 +3,7 @@ A simple json db in GO
 
 I sometimes write programs for RaspberryPi using nodejs and use a json file as a data storage. There are so many libraries in nodejs to deal with json file as a data storage. I could'nt find a similar library in GO to use in GO based RPi projects. So decided to write one.
 
-Keep in mind this library can be used in less data intensive applications.
+Keep in mind this library can be used in less data intensive applications. I normally use these kind of json data to store execution rules for sensors, etc.
 
 **What it does?**
 This library enables to store, retrieve, update and delete data from the json db.
