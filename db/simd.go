@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"encoding/json"
+	"sync"
 )
 
 //Entity any structure wanted to persist to json db should implement this interface.
@@ -49,6 +50,7 @@ type Driver struct {
 	originalJSON	interface{}			 // actual json when opening the json file
 	isOpened		bool
 	entityDealingWith interface{}		 // keeps the entity the driver is dealing with, field will maintain only the last entity inserted or updated or opened
+	mutex   *sync.Mutex
 }
 
 //New creates a new database driver. Accepts the directory name to store the db files.
@@ -58,6 +60,7 @@ func New(dir string) (*Driver, error) {
 	driver:= &Driver {
 		dir:dir,
 		queryMap: loadDefaultQueryMap(),
+		mutex:&sync.Mutex{},
 	}
 	err:= createDirIfNotExist(dir)
 	return driver, err
@@ -99,6 +102,9 @@ func (d * Driver) Errors () []error {
 //	}
 // err:=driver.Insert(customer)
 func (d *Driver) Insert(entity Entity) (err error) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	d.entityDealingWith=entity
 	err=d.readAppend(entity)
 	return
@@ -206,10 +212,12 @@ func (d *Driver) Update(entity Entity) (err error) {
 	d.queries=nil
 	d.entityDealingWith=entity
 	field, entityID:=entity.ID()
-	records:= d.Open(entity).Get().RawArray()
-
 	couldUpdate:=false
 	entName,_:=d.getEntityName()
+
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	records:= d.Open(entity).Get().RawArray()
 
 	if(len(records)>0){
 		for indx,item:= range records {
@@ -225,9 +233,9 @@ func (d *Driver) Update(entity Entity) (err error) {
 	if(couldUpdate) {
 		err=d.writeAll(records)
 	} else {
-		return fmt.Errorf("failed to update, unable to find any %s record with %s %s", entName,field, entityID)
+		err=fmt.Errorf("failed to update, unable to find any %s record with %s %s", entName,field, entityID)
 	}
-
+	
 	return
 }
 
@@ -240,13 +248,14 @@ func (d *Driver) Delete(entity Entity) (err error) {
 	d.queries=nil
 	d.entityDealingWith=entity
 	field, entityID:=entity.ID()
-	records:= d.Open(entity).Get().RawArray()
-	
 	entName,_:=d.getEntityName()
-
 	couldDelete:=false
 	newRecordArray:=make([]interface{},0,0)
-	
+
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	records:= d.Open(entity).Get().RawArray()
+
 	if(len(records)>0){
 		for indx,item:= range records {
 			if record, ok:=item.(map[string]interface{}); ok {
@@ -263,7 +272,7 @@ func (d *Driver) Delete(entity Entity) (err error) {
 	if(couldDelete) {
 		err=d.writeAll(newRecordArray)
 	} else {
-		return fmt.Errorf("failed to delete, unable to find any %s record with %s %s", entName,field, entityID)
+		err=fmt.Errorf("failed to delete, unable to find any %s record with %s %s", entName,field, entityID)
 	}
 	return
 }
