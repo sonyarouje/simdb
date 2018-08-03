@@ -72,8 +72,8 @@ func main() {
   //GET ONE Customer
   //First() will return the first record from the results 
   //AsEntity takes the address to Customer variable (not an array pointer)
-  var customer Customer
-  err=driver.Open(Customer{}).Where("name","=","sarouje").First().AsEntity(&customer)
+  var customerFrist Customer
+  err=driver.Open(Customer{}).Where("name","=","sarouje").First().AsEntity(&customerFrist)
   if(err!=nil){
     panic(err)
   }
