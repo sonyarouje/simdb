@@ -94,6 +94,6 @@ func main() {
 
 
 
-Started as a library created to learn GO.
+Started as a library to learn GO.
 
 Some of the codes to apply json filtering are borrowed from https://github.com/thedevsaddam/gojsonq
