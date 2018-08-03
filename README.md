@@ -61,7 +61,7 @@ func main() {
   
   //GET ALL Customer
   //opens the customer json file and filter all the customers with name sarouje.
-  //AsEntity takes an address to Customer array and fills the result to it.
+  //AsEntity takes a pointer to Customer array and fills the result to it.
   //we can loop through the customers array and retireve the data.
   var customers []Customer
   err=driver.Open(Customer{}).Where("name","=","sarouje").Get().AsEntity(&customers)
@@ -71,7 +71,7 @@ func main() {
   
   //GET ONE Customer
   //First() will return the first record from the results 
-  //AsEntity takes the address to Customer variable (not an array pointer)
+  //AsEntity takes a pointer to Customer variable (not an array pointer)
   var customerFrist Customer
   err=driver.Open(Customer{}).Where("custid","=","CUST1").First().AsEntity(&customerFrist)
   if(err!=nil){
@@ -86,8 +86,10 @@ func main() {
   }
   
   //Delete
-  err=driver.Delete(customerFrist)
-  
+	toDel:=Customer{
+		CustID:"CUST1",
+	}
+  err=driver.Delete(toDel)
 }
   
 ```
