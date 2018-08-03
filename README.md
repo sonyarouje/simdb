@@ -86,9 +86,9 @@ func main() {
   }
   
   //Delete
-	toDel:=Customer{
-		CustID:"CUST1",
-	}
+  toDel:=Customer{
+     CustID:"CUST1",
+  }
   err=driver.Delete(toDel)
 }
   
