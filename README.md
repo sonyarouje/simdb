@@ -73,20 +73,20 @@ func main() {
   //First() will return the first record from the results 
   //AsEntity takes the address to Customer variable (not an array pointer)
   var customerFrist Customer
-  err=driver.Open(Customer{}).Where("name","=","sarouje").First().AsEntity(&customerFrist)
+  err=driver.Open(Customer{}).Where("custid","=","CUST1").First().AsEntity(&customerFrist)
   if(err!=nil){
     panic(err)
   }
   
   //Update function uses the ID() to get the Id field/value to find the record and update the data.
-  customer.Name="Sony Arouje"
-  err=driver.Update(customer)
+  customerFrist.Name="Sony Arouje"
+  err=driver.Update(customerFrist)
   if(err!=nil){
     panic(err)
   }
   
   //Delete
-  err=driver.Delete(customer)
+  err=driver.Delete(customerFrist)
   
 }
   
