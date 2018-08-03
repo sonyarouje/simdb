@@ -10,5 +10,6 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-mydir/Customer
+mydir/*
 .vscode/launch.json
+db/test/*

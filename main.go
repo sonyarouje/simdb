@@ -3,6 +3,7 @@ package main
 import (
 	"simd/db"
 	"fmt"
+	"time"
 )
 
 type Customer struct {
@@ -24,13 +25,16 @@ func (c Customer) ID() (jsonField string, value interface{}) {
 }
 
 func main(){
+	fmt.Println("starting....")
+
 	driver, err:=db.New("mydir")
+
 	if(err!=nil){
 		panic(err)
 	}
 
 	customer:=Customer {
-		CustID:"CU1",
+		CustID:"CUST1",
 		Name:"sarouje",
 		Address: "address",
 		Contact: Contact {
@@ -38,47 +42,49 @@ func main(){
 			Email:"someone@gmail.com",
 		},
 	}
-	// err=driver.Insert(customer)
-	// if(err!=nil){
-	// 	panic(err)
-	// }
+	//creates a new Customer file inside the directory passed as the parameter to New()
+	//if the Customer file already exist then insert operation will add the customer data to the array
+	err=driver.Insert(customer)
+	if(err!=nil){
+		panic(err)
+	}
+	
+	//GET ALL Customer
+	//opens the customer json file and filter all the customers with name sarouje.
+	//AsEntity takes an address to Customer array and fills the result to it.
+	//we can loop through the customers array and retireve the data.
+	var customers []Customer
+	err=driver.Open(Customer{}).Where("name","=","sarouje").Get().AsEntity(&customers)
+	if(err!=nil){
+		panic(err)
+	}
+	// fmt.Printf("%#v \n", customers)
+	
+	//GET ONE Customer
+	//First() will return the first record from the results 
+	//AsEntity takes the address to Customer variable (not an array pointer)
+	var customerFirst Customer
+	err=driver.Open(Customer{}).Where("custid","=","CUST1").First().AsEntity(&customerFirst)
+	if(err!=nil){
+		panic(err)
+	}
+	
+	//Update function uses the ID() to get the Id field/value to find the record and update the data.
+	customerFirst.Name="Sony Arouje"
+	err=driver.Update(customerFirst)
+	if(err!=nil){
+		panic(err)
+	}
+	// driver.Open(Customer{}).Where("custid","=","CUST1").First().AsEntity(&customerFirst)
+	// fmt.Printf("%#v \n", customerFirst)
 
-	var custOut Customer;
-	// tmpCust:=&Customer{}
-	err=driver.Open(Customer{}).Where("custid","=","CU1").First().AsEntity(&custOut)
-	fmt.Printf("%s %s", custOut.Name, custOut.Contact.Email)
-
-	fmt.Println("")
-	var custArray []Customer
-	err=driver.Open(customer).Where("name","=","sarouje").Get().AsEntity(&custArray)
-	// driver.ToEntityArray(result2, &custArray)
-	fmt.Printf("%#v", custArray)
-
-	// var entityArray []Customer
-	// var custOut1 Customer;
-	// for _, item:= range result2 {
-	// 	driver.ToEntity(item, &custOut1)
-	// 	entityArray=append(entityArray, custOut1)
-	// }
-	// fmt.Printf("%#v", entityArray)
-
-	// custUpd:=Customer {
-	// 	Name:"sarouje1",
-	// 	Address:"UMC2",
-	// }
-	// err=driver.Update(custUpd)
-	// if(err!=nil){
-	// 	panic(err)
-	// }
-
-	// custDel:=Customer {
-	// 	Name:"sarouje2",
-	// }
-	// err=driver.Delete(custDel)
-	// if(err!=nil){
-	// 	panic(err)
-	// }
-	// var customers []Customer
-
-	// driver.Write(customers)
+	time.Sleep(2 * time.Second)
+	// Delete
+	toDel:=Customer{
+		CustID:"CUST1",
+	}
+	err=driver.Delete(toDel)
+	if(err!=nil){
+		panic(err)
+	}
 }

@@ -16,12 +16,10 @@ import (
 //		Address string `json:"address"`
 //		Contact Contact
 //	}
-//
 //	type Contact struct {
 //		Phone string `json:"phone"`
 //		Email string `json:"email"`
 //	}
-//
 //	func (c Customer) ID() (jsonField string, value interface{}) {
 //		value=c.CustID
 //		jsonField="custid"
@@ -54,7 +52,7 @@ type Driver struct {
 }
 
 //New creates a new database driver. Accepts the directory name to store the db files.
-//If the passed directory not exist then will create it.
+//If the passed directory not exist then will create one.
 // driver, err:=db.New("customer")
 func New(dir string) (*Driver, error) {
 	driver:= &Driver {
@@ -65,11 +63,11 @@ func New(dir string) (*Driver, error) {
 	return driver, err
 }
 
-//Open will open the json file db based on the entity passed.
+//Open will open the json db based on the entity passed.
 //Once the file is open you can apply where conditions or get operation.
 // driver.Open(Customer{})
 //Open returns a pointer to Driver, so you can chain methods like Where(), Get(), etc
-func (d *Driver) Open(entity interface{}) *Driver {
+func (d *Driver) Open(entity Entity) *Driver {
 	d.entityDealingWith=entity
 
 	db, err:=d.openDB(entity)
@@ -154,7 +152,10 @@ func(d *Driver) First() *Driver {
 	records:=d.Get().RawArray()
 	if len(records)>0 {
 		d.jsonContent = records[0]
+	}else{
+		d.addError(fmt.Errorf("no records to perform First operation"))
 	}
+
 	return d
 }
 
@@ -165,6 +166,8 @@ func (d *Driver) Raw() interface{} {
 
 //RawArray will return the data in map array type
 func (d *Driver) RawArray() []interface{} {
+	fmt.Println("calling rawarray")
+	fmt.Printf("%#v\n", d.jsonContent)
 	if aa, ok := d.jsonContent.([]interface{}); ok {
 		return aa
 	}
@@ -203,6 +206,7 @@ func (d *Driver) Update(entity Entity) (err error) {
 	d.entityDealingWith=entity
 	field, entityID:=entity.ID()
 	records:= d.Open(entity).Get().RawArray()
+
 	couldUpdate:=false
 	entName,_:=d.getEntityName()
 
@@ -220,7 +224,7 @@ func (d *Driver) Update(entity Entity) (err error) {
 	if(couldUpdate) {
 		err=d.writeAll(records)
 	} else {
-		return fmt.Errorf("Failed to update. Unable to find any %s record with ID %s", entName, entityID)
+		return fmt.Errorf("failed to update, unable to find any %s record with %s %s", entName,field, entityID)
 	}
 
 	return
@@ -235,11 +239,12 @@ func (d *Driver) Delete(entity Entity) (err error) {
 	d.entityDealingWith=entity
 	field, entityID:=entity.ID()
 	records:= d.Open(entity).Get().RawArray()
+	
 	entName,_:=d.getEntityName()
 
 	couldDelete:=false
 	newRecordArray:=make([]interface{},0,0)
-
+	
 	if(len(records)>0){
 		for indx,item:= range records {
 			if record, ok:=item.(map[string]interface{}); ok {
@@ -256,7 +261,7 @@ func (d *Driver) Delete(entity Entity) (err error) {
 	if(couldDelete) {
 		err=d.writeAll(newRecordArray)
 	} else {
-		return fmt.Errorf("Failed to delete. Unable to find any %s record with ID %s", entName, entityID)
+		return fmt.Errorf("failed to delete, unable to find any %s record with %s %s", entName,field, entityID)
 	}
 	return
 }
