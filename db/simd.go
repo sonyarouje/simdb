@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-//Entity any structure wanted to persist to json db should implement this interface.
+//Entity any structure wanted to persist to json db should implement this interface function ID().
 //ID and Field will be used while doing update and delete operation.
 //ID() return the id value and field name that stores the id
 //
@@ -55,7 +55,7 @@ type Driver struct {
 
 //New creates a new database driver. Accepts the directory name to store the db files.
 //If the passed directory not exist then will create one.
-// driver, err:=db.New("customer")
+//   driver, err:=db.New("customer")
 func New(dir string) (*Driver, error) {
 	driver:= &Driver {
 		dir:dir,
@@ -68,7 +68,7 @@ func New(dir string) (*Driver, error) {
 
 //Open will open the json db based on the entity passed.
 //Once the file is open you can apply where conditions or get operation.
-// driver.Open(Customer{})
+//   driver.Open(Customer{})
 //Open returns a pointer to Driver, so you can chain methods like Where(), Get(), etc
 func (d *Driver) Open(entity Entity) *Driver {
 	d.queries=nil
@@ -91,6 +91,7 @@ func (d * Driver) Errors () []error {
 //Insert the entity to the json db. Insert will identify the type of the 
 //entity and insert the entity to the specific json file based on the type of the entity.
 //If the db file not exist then will create a new db file
+//
 // 	customer:=Customer {
 //		CustID:"CUST1",
 //		Name:"sarouje",
@@ -100,7 +101,7 @@ func (d * Driver) Errors () []error {
 //			Email:"someone@gmail.com",
 //		},
 //	}
-// err:=driver.Insert(customer)
+//  err:=driver.Insert(customer)
 func (d *Driver) Insert(entity Entity) (err error) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -132,9 +133,9 @@ func (d *Driver) Where(key, cond string, val interface{}) *Driver {
 
 //Get the result from the json db as an array. If no where condition then return all the data from json
 //return based on a where condition
-// driver.Open(Customer{}).Where("name","=","sarouje").Get()
+//   driver.Open(Customer{}).Where("name","=","sarouje").Get()
 //return all records
-// driver.Open(Customer{}).Get()
+//   driver.Open(Customer{}).Get()
 func(d *Driver) Get() *Driver{
 	if(!d.isDBOpened()){
 		return d
@@ -150,7 +151,7 @@ func(d *Driver) Get() *Driver{
 }
 
 //First return the first record matching the condtion.
-// driver.Open(Customer{}).Where("custid","=","CUST1").First()
+//   driver.Open(Customer{}).Where("custid","=","CUST1").First()
 func(d *Driver) First() *Driver {
 	if(!d.isDBOpened()){
 		return d
@@ -183,17 +184,18 @@ func (d *Driver) RawArray() []interface{} {
 //AsEntity will converts the map to the passed structure pointer.
 //should call this function after calling Get() or First(). This function will convert
 //the result of Get or First operation to the passed structure type
-//output should be a pointer to structure or stucture array. Function returns error in case
+//'output' variable should be a pointer to a structure or stucture array. Function returns error in case
 //of any errors in conversion.
 //
-//First() 
-// var custOut Customer
-// err:=driver.Open(Customer{}).First().AsEntity(&custOut)
-//this function will fill the custOut with the values from the map
+//First()
+//   var custOut Customer
+//   err:=driver.Open(Customer{}).First().AsEntity(&custOut)
+//   fmt.Printf("%#v", custOut)
+//   this function will fill the custOut with the values from the map
 //
 //Get()
-// var customers []Customer
-// err:=driver.Open(Customer{}).Get().AsEntity(&customers)
+//   var customers []Customer
+//   err:=driver.Open(Customer{}).Get().AsEntity(&customers)
 func (d *Driver) AsEntity(output interface{}) (err error) {
 	if(!d.isDBOpened()){
 		return fmt.Errorf("should call Open() before calling AsEntity()")
@@ -204,9 +206,9 @@ func (d *Driver) AsEntity(output interface{}) (err error) {
 }
 
 //Update the json data based on the id field/value pair
-// customerToUpdate:=driver.Open(Customer{}).Where("custid","=","CUST1").First()
-// customerToUpdate.Name="Sony Arouje"
-// err:=driver.Update(customerToUpdate)
+//   customerToUpdate:=driver.Open(Customer{}).Where("custid","=","CUST1").First()
+//   customerToUpdate.Name="Sony Arouje"
+//   err:=driver.Update(customerToUpdate)
 //Should not change the ID field when updating the record.
 func (d *Driver) Update(entity Entity) (err error) {
 	d.queries=nil
@@ -240,10 +242,10 @@ func (d *Driver) Update(entity Entity) (err error) {
 }
 
 //Delete the record from the json db based on the id field/value pair
-// custToDelete:=Customer {
-// 	CustID:"CUST1",
-// }
-// err:=driver.Delete(custToDelete)
+//   custToDelete:=Customer {
+// 	   CustID:"CUST1",
+//   }
+//   err:=driver.Delete(custToDelete)
 func (d *Driver) Delete(entity Entity) (err error) {
 	d.queries=nil
 	d.entityDealingWith=entity
