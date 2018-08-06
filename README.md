@@ -5,6 +5,8 @@ I sometimes write programs for RaspberryPi using nodejs and use a json file as a
 
 Keep in mind this library can be used in less data intensive applications. I normally use these kind of json data to store execution rules for sensors, etc.
 
+**Go Doc** https://godoc.org/github.com/sonyarouje/simdb/db
+
 **What it does?**
 This library enables to store, retrieve, update and delete data from the json db.
 
