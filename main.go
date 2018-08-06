@@ -1,7 +1,7 @@
 package main
 
 import (
-	"simd/db"
+	"simdb/db"
 	"fmt"
 )
 

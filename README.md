@@ -14,7 +14,7 @@ Let's have a look at, how to store some data and manipulate them using simd.
 ```
 package main
 
-import "github.com/sonyarouje/simd/db"
+import "github.com/sonyarouje/simdb/db"
 
 type Customer struct {
 	CustID string `json:"custid"`
