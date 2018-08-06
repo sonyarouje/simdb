@@ -17,6 +17,8 @@ type Contact struct {
 	Email string `json:"email"`
 }
 
+//ID any struct that needs to persist should implement this function defined 
+//in Entity interface.
 func (c Customer) ID() (jsonField string, value interface{}) {
 	value=c.CustID
 	jsonField="custid"
@@ -42,7 +44,8 @@ func main(){
 		},
 	}
 	//creates a new Customer file inside the directory passed as the parameter to New()
-	//if the Customer file already exist then insert operation will add the customer data to the array
+	//if the Customer file already exist then insert operation 
+	//will add the customer data to the array
 	err=driver.Insert(customer)
 	if(err!=nil){
 		panic(err)
@@ -68,7 +71,8 @@ func main(){
 		panic(err)
 	}
 	
-	//Update function uses the ID() to get the Id field/value to find the record and update the data.
+	//Update function uses the ID() to get the Id field/value 
+	//to find the record and update the data.
 	customerFirst.Name="Sony Arouje"
 	err=driver.Update(customerFirst)
 	if(err!=nil){

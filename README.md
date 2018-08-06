@@ -28,7 +28,8 @@ type Contact struct {
 	Email string `json:"email"`
 }
 
-//ID any entity that needs to persist should implement this function.
+//ID any struct that needs to persist should implement this function defined 
+//in Entity interface.
 func (c Customer) ID() (jsonField string, value interface{}) {
 	value=c.CustID
 	jsonField="custid"
