@@ -56,7 +56,10 @@ func main(){
 	//AsEntity takes an address to Customer array and fills the result to it.
 	//we can loop through the customers array and retireve the data.
 	var customers []Customer
-	err=driver.Open(Customer{}).Where("name","=","sarouje").Get().AsEntity(&customers)
+	err=driver.Open(Customer{}).
+		Where("name","=","sarouje").
+		Get().
+		AsEntity(&customers)
 	if(err!=nil){
 		panic(err)
 	}
@@ -66,7 +69,10 @@ func main(){
 	//First() will return the first record from the results 
 	//AsEntity takes the address to Customer variable (not an array pointer)
 	var customerFirst Customer
-	err=driver.Open(Customer{}).Where("custid","=","CUST1").First().AsEntity(&customerFirst)
+	err=driver.Open(Customer{}).
+		Where("custid","=","CUST1").
+		First().
+		AsEntity(&customerFirst)
 	if(err!=nil){
 		panic(err)
 	}
@@ -78,7 +84,10 @@ func main(){
 	if(err!=nil){
 		panic(err)
 	}
-	driver.Open(Customer{}).Where("custid","=","CUST1").First().AsEntity(&customerFirst)
+	driver.Open(Customer{}).
+		Where("custid","=","CUST1").
+		First().
+		AsEntity(&customerFirst)
 	fmt.Printf("%#v \n", customerFirst)
 
 	// Delete
