@@ -13,7 +13,7 @@ func createDirIfNotExist(dir string) error {
 	if _,err:= os.Stat(dir); err==nil {
 		return nil
 	}
-	err:=os.Mkdir(dir, 755)
+	err:=os.Mkdir(dir, 0755)
 	return err
 }
 
