@@ -2,8 +2,8 @@
 package db
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"sync"
 )
 
@@ -42,28 +42,28 @@ type query struct {
 
 //Driver contains all the state of the db.
 type Driver struct {
-	dir string							 //directory name to store the db
-	queries         [][]query            // nested queries
-	queryIndex      int
-	queryMap        map[string]QueryFunc // contains query functions
-	jsonContent     interface{}          // copy of original decoded json data for further processing
-	errors          []error              // contains all the errors when processing
-	originalJSON	interface{}			 // actual json when opening the json file
-	isOpened		bool
-	entityDealingWith interface{}		 // keeps the entity the driver is dealing with, field will maintain only the last entity inserted or updated or opened
-	mutex   *sync.Mutex
+	dir               string    //directory name to store the db
+	queries           [][]query // nested queries
+	queryIndex        int
+	queryMap          map[string]QueryFunc // contains query functions
+	jsonContent       interface{}          // copy of original decoded json data for further processing
+	errors            []error              // contains all the errors when processing
+	originalJSON      interface{}          // actual json when opening the json file
+	isOpened          bool
+	entityDealingWith interface{} // keeps the entity the driver is dealing with, field will maintain only the last entity inserted or updated or opened
+	mutex             *sync.Mutex
 }
 
 //New creates a new database driver. Accepts the directory name to store the db files.
 //If the passed directory not exist then will create one.
 //   driver, err:=db.New("customer")
 func New(dir string) (*Driver, error) {
-	driver:= &Driver {
-		dir:dir,
+	driver := &Driver{
+		dir:      dir,
 		queryMap: loadDefaultQueryMap(),
-		mutex:&sync.Mutex{},
+		mutex:    &sync.Mutex{},
 	}
-	err:= createDirIfNotExist(dir)
+	err := createDirIfNotExist(dir)
 	return driver, err
 }
 
@@ -72,24 +72,24 @@ func New(dir string) (*Driver, error) {
 //   driver.Open(Customer{})
 //Open returns a pointer to Driver, so you can chain methods like Where(), Get(), etc
 func (d *Driver) Open(entity Entity) *Driver {
-	d.queries=nil
-	d.entityDealingWith=entity
-	db, err:=d.openDB(entity)
-	d.originalJSON=db
-	d.jsonContent=d.originalJSON
-	d.isOpened=true
-	if(err!=nil){
+	d.queries = nil
+	d.entityDealingWith = entity
+	db, err := d.openDB(entity)
+	d.originalJSON = db
+	d.jsonContent = d.originalJSON
+	d.isOpened = true
+	if err != nil {
 		d.addError(err)
 	}
 	return d
 }
 
 //Errors will return errors encountered while performing any operations
-func (d * Driver) Errors () []error {
+func (d *Driver) Errors() []error {
 	return d.errors
 }
 
-//Insert the entity to the json db. Insert will identify the type of the 
+//Insert the entity to the json db. Insert will identify the type of the
 //entity and insert the entity to the specific json file based on the type of the entity.
 //If the db file not exist then will create a new db file
 //
@@ -107,8 +107,8 @@ func (d *Driver) Insert(entity Entity) (err error) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	d.entityDealingWith=entity
-	err=d.readAppend(entity)
+	d.entityDealingWith = entity
+	err = d.readAppend(entity)
 	return
 }
 
@@ -138,30 +138,30 @@ func (d *Driver) Where(key, cond string, val interface{}) *Driver {
 //   driver.Open(Customer{}).Where("name","=","sarouje").Get()
 //Get all records
 //   driver.Open(Customer{}).Get()
-func(d *Driver) Get() *Driver{
-	if(!d.isDBOpened()){
+func (d *Driver) Get() *Driver {
+	if !d.isDBOpened() {
 		return d
 	}
 	if len(d.queries) > 0 {
 		d.processQuery()
-	}else{
-		d.jsonContent=d.originalJSON
+	} else {
+		d.jsonContent = d.originalJSON
 	}
 	d.queryIndex = 0
-	
+
 	return d
 }
 
 //First return the first record matching the condtion.
 //   driver.Open(Customer{}).Where("custid","=","CUST1").First()
-func(d *Driver) First() *Driver {
-	if(!d.isDBOpened()){
+func (d *Driver) First() *Driver {
+	if !d.isDBOpened() {
 		return d
-	}	
-	records:=d.Get().RawArray()
-	if len(records)>0 {
+	}
+	records := d.Get().RawArray()
+	if len(records) > 0 {
 		d.jsonContent = records[0]
-	}else{
+	} else {
 		d.addError(fmt.Errorf("no records to perform First operation"))
 	}
 
@@ -175,8 +175,6 @@ func (d *Driver) Raw() interface{} {
 
 //RawArray will return the data in map array type
 func (d *Driver) RawArray() []interface{} {
-	fmt.Println("calling rawarray")
-	fmt.Printf("%#v\n", d.jsonContent)
 	if aa, ok := d.jsonContent.([]interface{}); ok {
 		return aa
 	}
@@ -199,11 +197,11 @@ func (d *Driver) RawArray() []interface{} {
 //   var customers []Customer
 //   err:=driver.Open(Customer{}).Get().AsEntity(&customers)
 func (d *Driver) AsEntity(output interface{}) (err error) {
-	if(!d.isDBOpened()){
+	if !d.isDBOpened() {
 		return fmt.Errorf("should call Open() before calling AsEntity()")
-	}	
-	outByte, err:= json.Marshal(d.jsonContent)
-	err=json.Unmarshal(outByte, output)
+	}
+	outByte, err := json.Marshal(d.jsonContent)
+	err = json.Unmarshal(outByte, output)
 	return
 }
 
@@ -213,33 +211,33 @@ func (d *Driver) AsEntity(output interface{}) (err error) {
 //   err:=driver.Update(customerToUpdate)
 //Should not change the ID field when updating the record.
 func (d *Driver) Update(entity Entity) (err error) {
-	d.queries=nil
-	d.entityDealingWith=entity
-	field, entityID:=entity.ID()
-	couldUpdate:=false
-	entName,_:=d.getEntityName()
+	d.queries = nil
+	d.entityDealingWith = entity
+	field, entityID := entity.ID()
+	couldUpdate := false
+	entName, _ := d.getEntityName()
 
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	records:= d.Open(entity).Get().RawArray()
+	records := d.Open(entity).Get().RawArray()
 
-	if(len(records)>0){
-		for indx,item:= range records {
-			if record, ok:=item.(map[string]interface{}); ok {
-				if v, ok:=record[field]; ok && v==entityID {
-					records[indx]=entity
-					couldUpdate=true
+	if len(records) > 0 {
+		for indx, item := range records {
+			if record, ok := item.(map[string]interface{}); ok {
+				if v, ok := record[field]; ok && v == entityID {
+					records[indx] = entity
+					couldUpdate = true
 					fmt.Printf("Updating %s with ID %s \n", entName, entityID)
 				}
 			}
 		}
 	}
-	if(couldUpdate) {
-		err=d.writeAll(records)
+	if couldUpdate {
+		err = d.writeAll(records)
 	} else {
-		err=fmt.Errorf("failed to update, unable to find any %s record with %s %s", entName,field, entityID)
+		err = fmt.Errorf("failed to update, unable to find any %s record with %s %s", entName, field, entityID)
 	}
-	
+
 	return
 }
 
@@ -249,34 +247,34 @@ func (d *Driver) Update(entity Entity) (err error) {
 //   }
 //   err:=driver.Delete(custToDelete)
 func (d *Driver) Delete(entity Entity) (err error) {
-	d.queries=nil
-	d.entityDealingWith=entity
-	field, entityID:=entity.ID()
-	entName,_:=d.getEntityName()
-	couldDelete:=false
-	newRecordArray:=make([]interface{},0,0)
+	d.queries = nil
+	d.entityDealingWith = entity
+	field, entityID := entity.ID()
+	entName, _ := d.getEntityName()
+	couldDelete := false
+	newRecordArray := make([]interface{}, 0, 0)
 
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	records:= d.Open(entity).Get().RawArray()
+	records := d.Open(entity).Get().RawArray()
 
-	if(len(records)>0){
-		for indx,item:= range records {
-			if record, ok:=item.(map[string]interface{}); ok {
-				if v, ok:=record[field]; ok && v!=entityID {
-					records[indx]=entity
-					newRecordArray=append(newRecordArray, record)
+	if len(records) > 0 {
+		for indx, item := range records {
+			if record, ok := item.(map[string]interface{}); ok {
+				if v, ok := record[field]; ok && v != entityID {
+					records[indx] = entity
+					newRecordArray = append(newRecordArray, record)
 				} else {
 					fmt.Printf("Deleting %s with ID %s \n", entName, entityID)
-					couldDelete=true
+					couldDelete = true
 				}
 			}
 		}
 	}
-	if(couldDelete) {
-		err=d.writeAll(newRecordArray)
+	if couldDelete {
+		err = d.writeAll(newRecordArray)
 	} else {
-		err=fmt.Errorf("failed to delete, unable to find any %s record with %s %s", entName,field, entityID)
+		err = fmt.Errorf("failed to delete, unable to find any %s record with %s %s", entName, field, entityID)
 	}
 	return
 }
