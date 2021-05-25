@@ -1,16 +1,15 @@
-package db
+package simdb
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"reflect"
-	"io/ioutil"
-	"encoding/json"
-	"fmt"
-	"errors"
+	"strings"
 )
-
 
 // addError adds error to error list
 func (d *Driver) addError(err error) *Driver {
@@ -19,40 +18,40 @@ func (d *Driver) addError(err error) *Driver {
 }
 
 func (d *Driver) openDB(entity interface{}) ([]interface{}, error) {
-	entityName, err:=d.getEntityName()
-	
-	if(err!=nil){
+	entityName, err := d.getEntityName()
+
+	if err != nil {
 		return nil, err
 	}
-	file:=filepath.Join(d.dir, entityName)
+	file := filepath.Join(d.dir, entityName)
 
-	f, err:=os.OpenFile(file, os.O_RDWR|os.O_CREATE, 0666)
+	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return nil, err
+	}
 	defer f.Close()
-	if(err!=nil){
-		return nil, err
-	}
 
-	b, readErr:=ioutil.ReadFile(file)
-	if readErr!=nil {
+	b, readErr := ioutil.ReadFile(file)
+	if readErr != nil {
 		return nil, readErr
 	}
-	array:=make([]interface{}, 0)
-	json.Unmarshal(b,&array)
+	array := make([]interface{}, 0)
+	json.Unmarshal(b, &array)
 
 	return array, nil
 }
 
-func(d *Driver) isDBOpened() bool {
-	if(d.isOpened==false){
-		err:=errors.New("should call Open() before doing any query on json file")
+func (d *Driver) isDBOpened() bool {
+	if !d.isOpened {
+		err := errors.New("should call Open() before doing any query on json file")
 		d.addError(err)
 	}
 	return d.isOpened
 }
 
-func (d *Driver) getEntityName () (string, error) {
-	typeName:=strings.Split(reflect.TypeOf(d.entityDealingWith).String(), ".")
-	if len(typeName)<=0 {
+func (d *Driver) getEntityName() (string, error) {
+	typeName := strings.Split(reflect.TypeOf(d.entityDealingWith).String(), ".")
+	if len(typeName) <= 0 {
 		return "", fmt.Errorf("unable infer the type of the entity passed")
 	}
 
@@ -60,29 +59,37 @@ func (d *Driver) getEntityName () (string, error) {
 }
 
 func (d *Driver) readAppend(entity interface{}) (err error) {
-	result, err:=d.openDB(entity)
-	mergedArray, err:=mergeToExisting(result, entity)
-	err=d.writeAll(mergedArray)
+	result, err := d.openDB(entity)
+	if err != nil {
+		return
+	}
+	mergedArray, err := mergeToExisting(result, entity)
+	if err != nil {
+		return
+	}
+	err = d.writeAll(mergedArray)
 	return
 }
 
-func(d *Driver) writeAll(entities []interface{}) (err error) {
-	entityName, err:=d.getEntityName()
-	file:=filepath.Join(d.dir, entityName)
-	f, err:=os.OpenFile(file, os.O_RDWR|os.O_CREATE, 0666)
+func (d *Driver) writeAll(entities []interface{}) (err error) {
+	entityName, err := d.getEntityName()
+	file := filepath.Join(d.dir, entityName)
+	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return
+	}
 	defer f.Close()
 
-	b, err:=json.MarshalIndent(entities, "", "\t")
-	if err!=nil {
+	b, err := json.MarshalIndent(entities, "", "\t")
+	if err != nil {
 		return
 	}
 	f.Truncate(0)
-	f.Seek(0,0)
+	f.Seek(0, 0)
 	f.Write(b)
 	f.Sync()
 	return
 }
-
 
 // findInArray traverses through a list and returns the value list.
 // This helps to process Where/OrWhere queries
@@ -90,10 +97,10 @@ func (d *Driver) findInArray(aa []interface{}) []interface{} {
 	result := make([]interface{}, 0)
 	for _, a := range aa {
 		if m, ok := a.(map[string]interface{}); ok {
-			findResult, err:=d.findInMap(m)
-			if(err==nil){
+			findResult, err := d.findInMap(m)
+			if err == nil {
 				result = append(result, findResult...)
-			}else{
+			} else {
 				d.addError(err)
 			}
 		}

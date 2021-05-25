@@ -13,3 +13,4 @@
 mydir/*
 .vscode/launch.json
 db/test/*
+test/*

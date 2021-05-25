@@ -1,5 +1,5 @@
 //Package db A simple library to persist structs in json file and perform queries and CRUD operations
-package db
+package simdb
 
 import (
 	"encoding/json"
@@ -201,6 +201,9 @@ func (d *Driver) AsEntity(output interface{}) (err error) {
 		return fmt.Errorf("should call Open() before calling AsEntity()")
 	}
 	outByte, err := json.Marshal(d.jsonContent)
+	if err != nil {
+		return err
+	}
 	err = json.Unmarshal(outByte, output)
 	return
 }
@@ -224,10 +227,9 @@ func (d *Driver) Update(entity Entity) (err error) {
 	if len(records) > 0 {
 		for indx, item := range records {
 			if record, ok := item.(map[string]interface{}); ok {
-				if v, ok := record[field]; ok && v == entityID {
+				if v, ok := record[field]; ok && fmt.Sprintf("%v", v) == fmt.Sprintf("%v", entityID) {
 					records[indx] = entity
 					couldUpdate = true
-					fmt.Printf("Updating %s with ID %s \n", entName, entityID)
 				}
 			}
 		}
@@ -265,7 +267,6 @@ func (d *Driver) Delete(entity Entity) (err error) {
 					records[indx] = entity
 					newRecordArray = append(newRecordArray, record)
 				} else {
-					fmt.Printf("Deleting %s with ID %s \n", entName, entityID)
 					couldDelete = true
 				}
 			}
