@@ -9,6 +9,7 @@ import (
 )
 
 var ErrRecordNotFound = errors.New("record not found")
+var ErrUpdateFailed = errors.New("update failed, no record(s) to update")
 
 //Entity any structure wanted to persist to json db should implement this interface function ID().
 //ID and Field will be used while doing update and delete operation.
@@ -232,7 +233,7 @@ func (d *Driver) Update(entity Entity) (err error) {
 	d.entityDealingWith = entity
 	field, entityID := entity.ID()
 	couldUpdate := false
-	entName, _ := d.getEntityName()
+	// entName, _ := d.getEntityName()
 
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
@@ -251,9 +252,30 @@ func (d *Driver) Update(entity Entity) (err error) {
 	if couldUpdate {
 		err = d.writeAll(records)
 	} else {
-		err = fmt.Errorf("failed to update, unable to find any %s record with %s %s", entName, field, entityID)
+		err = ErrUpdateFailed
 	}
 
+	return
+}
+
+// Upsert function will try updating the passed entity. If no records to update then
+// do the Insert operation.
+//
+//    	customer := Customer{
+//		CustID:  "CU4",
+//		Name:    "Sony Arouje",
+//		Address: "address",
+//		Contact: Contact{
+//			Phone: "45533355",
+//			Email: "someone@gmail.com",
+//		},
+//	}
+//  driver.Upsert(customer)
+func (d *Driver) Upsert(entity Entity) (err error) {
+	err = d.Update(entity)
+	if errors.Is(err, ErrUpdateFailed) {
+		err = d.Insert(entity)
+	}
 	return
 }
 

@@ -95,6 +95,63 @@ func TestUpdateCustomer(t *testing.T) {
 
 }
 
+func TestUpdateCustomerNonExistingId(t *testing.T) {
+	driver, err := New("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	customer := Customer{
+		CustID: "CU2",
+		Name:   "sony",
+	}
+	err = driver.Update(customer)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
+func TestUpsert(t *testing.T) {
+	driver, err := New("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	customer := Customer{
+		CustID:  "CU4",
+		Name:    "sarouje",
+		Address: "address",
+		Contact: Contact{
+			Phone: "45533355",
+			Email: "someone@gmail.com",
+		},
+	}
+	err = driver.Upsert(customer)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	fetched, err := getCustomer(customer)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if fetched.CustID != customer.CustID {
+		t.Errorf("unable to do upsert for cust id %s", customer.CustID)
+	}
+
+	customer.Name = "Sony Arouje"
+	err = driver.Upsert(customer)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	fetched, err = getCustomer(fetched)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if fetched.Name != customer.Name {
+		t.Errorf("unable to do upsert for cust id %s", customer.CustID)
+	}
+}
+
 func getCustomer(c Customer) (Customer, error) {
 	driver, err := New("test")
 	var fetchedCustomer Customer
