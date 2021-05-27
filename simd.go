@@ -3,9 +3,12 @@ package simdb
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 )
+
+var ErrRecordNotFound = errors.New("record not found")
 
 //Entity any structure wanted to persist to json db should implement this interface function ID().
 //ID and Field will be used while doing update and delete operation.
@@ -200,6 +203,17 @@ func (d *Driver) AsEntity(output interface{}) (err error) {
 	if !d.isDBOpened() {
 		return fmt.Errorf("should call Open() before calling AsEntity()")
 	}
+	switch t := d.jsonContent.(type) {
+	case []interface{}:
+		if len(t) <= 0 {
+			return ErrRecordNotFound
+		}
+	case interface{}:
+		if t == nil {
+			return ErrRecordNotFound
+		}
+	}
+
 	outByte, err := json.Marshal(d.jsonContent)
 	if err != nil {
 		return err

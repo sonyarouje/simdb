@@ -52,7 +52,7 @@ func (d *Driver) isDBOpened() bool {
 func (d *Driver) getEntityName() (string, error) {
 	typeName := strings.Split(reflect.TypeOf(d.entityDealingWith).String(), ".")
 	if len(typeName) <= 0 {
-		return "", fmt.Errorf("unable infer the type of the entity passed")
+		return "", fmt.Errorf("unable to infer the type of the entity passed")
 	}
 
 	return typeName[len(typeName)-1], nil
