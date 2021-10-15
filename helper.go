@@ -9,17 +9,16 @@ import (
 )
 
 func createDirIfNotExist(dir string) error {
-
-	if _,err:= os.Stat(dir); err==nil {
+	if _, err := os.Stat(dir); err == nil {
 		return nil
 	}
-	err:=os.Mkdir(dir, 0755)
+	err := os.Mkdir(dir, 0755)
 	return err
 }
 
 
 func mergeToExisting(array []interface{}, entity interface{}) ([]interface{}, error) {
-	array=append(array, entity)
+	array = append(array, entity)
 	return array, nil
 }
 
