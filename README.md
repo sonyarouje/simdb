@@ -13,7 +13,7 @@ This library enables to store, retrieve, update and delete data from the json db
 **Usage**
 Let's have a look at, how to store some data and manipulate them using simd.
 
-```
+```GO
 package main
 
 import db "github.com/sonyarouje/simdb"
