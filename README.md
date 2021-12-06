@@ -40,7 +40,7 @@ func (c Customer) ID() (jsonField string, value interface{}) {
 
 func main() {
     driver, err:=db.New("data")
-    if(err!=nil){
+    if err!=nil {
       panic(err)
     }
   
@@ -58,7 +58,7 @@ func main() {
   //creates a new Customer file inside the directory passed as the parameter to New()
   //if the Customer file already exist then insert operation will add the customer data to the array
   err=driver.Insert(customer)
-  if(err!=nil){
+  if err!=nil {
     panic(err)
   }
   
@@ -68,7 +68,7 @@ func main() {
   //we can loop through the customers array and retireve the data.
   var customers []Customer
   err=driver.Open(Customer{}).Where("name","=","sarouje").Get().AsEntity(&customers)
-  if(err!=nil){
+  if err!=nil {
     panic(err)
   }
   
@@ -77,14 +77,14 @@ func main() {
   //AsEntity takes a pointer to Customer variable (not an array pointer)
   var customerFrist Customer
   err=driver.Open(Customer{}).Where("custid","=","CUST1").First().AsEntity(&customerFrist)
-  if(err!=nil){
+  if err!=nil {
     panic(err)
   }
   
   //Update function uses the ID() to get the Id field/value to find the record and update the data.
   customerFrist.Name="Sony Arouje"
   err=driver.Update(customerFrist)
-  if(err!=nil){
+  if err!=nil {
     panic(err)
   }
   
